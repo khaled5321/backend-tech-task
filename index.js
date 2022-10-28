@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const { swaggerDocs: V1SwaggerDocs } = require("./swagger");
 
 const User = require('./models/user');
 const Article = require('./models/article');
@@ -31,11 +32,11 @@ app.get('/suggestedArticles/:userID/:articleID', async (req, res) => {
         const currentArticle = await Article.findById(req.params.articleID)  
         const currentUser= await User.findById(req.params.userID)
 
+        //get articles with same category
         const sameCategory= await Article.find(
             {
                 categories:{$in:currentArticle.categories},
                 "_id":{$ne:currentArticle.id, $nin:currentUser.articles},
-                author:{$ne:currentArticle.author}
             }
         ).populate(['author','categories'])
 
@@ -63,7 +64,6 @@ app.get('/suggestedArticles/:userID/:articleID', async (req, res) => {
 
             if(sameCategoryAndAuthor.length){
                 res.status(200).json(sameCategoryAndAuthor)
-                console.log('here1')
             }
             else if(sameCategory.length){
                 if(sameAuthor.length) {
@@ -73,11 +73,9 @@ app.get('/suggestedArticles/:userID/:articleID', async (req, res) => {
                 else{
                     res.status(200).json(sameCategory)
                 }
-                console.log('here2')
             }
             else{
                 res.status(200).json(sameAuthor)
-                console.log('here3')
             }
 
         }
@@ -87,4 +85,69 @@ app.get('/suggestedArticles/:userID/:articleID', async (req, res) => {
 });
 
 
-app.listen(3000, () => console.log(`Api running on port 3000!`))
+// docs spesification
+
+/**
+ * @openapi
+ * /suggestedArticles/{userID}/{articleID}:
+ *   get:
+ *     description: Takes the current userID and current ArticleID and returns a list of suggested articles
+ *     tags:
+ *       - Routes
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The current UserID
+ *       - in: path
+ *         name: articleID
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the article the user currently reading
+ *     responses:
+ *       200:
+ *         description: OK
+ *       204:
+ *         description: No Articles Found!
+ *       404:
+ *         description: Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   author:
+ *                     type: object 
+ *                     items: 
+ *                       type: object
+ *                   squar_cover:
+ *                     type: string
+ *                   rectangle_cover:
+ *                     type: string
+ *                   categories:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                   paragraphs:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                   readsCount:
+ *                     type: number
+ *                   shareCount:
+ *                     type: number
+ */
+
+
+
+app.listen(3000, () => {
+    console.log(`Api running on port 3000!`)
+    V1SwaggerDocs(app, 3000);
+})

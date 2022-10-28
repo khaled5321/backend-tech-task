@@ -1,4 +1,4 @@
-An API to suggest articles for the user.
+An API for suggesting articles for the user.
 
 ## Run locally
 
